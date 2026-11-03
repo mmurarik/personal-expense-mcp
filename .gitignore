@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.pg-test/
+coverage/
+
+# Private interview prep, not for the public repo
+docs/interview-notes.md

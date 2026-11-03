@@ -1,0 +1,10 @@
+node_modules
+dist
+.git
+.env
+.env.*
+.pg-test
+coverage
+test
+*.md
+!README.md
