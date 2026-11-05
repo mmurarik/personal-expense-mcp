@@ -4,6 +4,7 @@
 import { z } from "zod";
 
 function isTimeZone(value: string): boolean {
+  if (/^[+-]/.test(value)) return false;
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: value });
     return true;
@@ -28,8 +29,17 @@ const AppEnv = DbEnv.extend({
     .string()
     .default("America/Los_Angeles")
     .refine(isTimeZone, { message: "must be an IANA time zone such as America/Los_Angeles" }),
-  API_INTERNAL_BASE_URL: z.string().url().optional(),
-  API_BEARER_TOKEN: z.string().min(32, { message: "must be at least 32 characters" }),
+  API_INTERNAL_BASE_URL: z.string().url().refine((value) => {
+    try {
+      const url = new URL(value);
+      return ["http:", "https:"].includes(url.protocol)
+        && !url.username && !url.password && url.href === `${url.origin}/`;
+    } catch {
+      return false;
+    }
+  }, { message: "must be an HTTP(S) origin without credentials or a path" }).optional(),
+  API_BEARER_TOKEN: z.string().min(32, { message: "must be at least 32 characters" })
+    .regex(/^[A-Za-z0-9._~+/-]+=*$/, { message: "must be a valid bearer token" }),
 });
 
 export type DbConfig = {

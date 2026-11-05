@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "personal-expenses": {
+      "type": "http",
+      "url": "${BASE_URL}/mcp",
+      "headers": {
+        "Authorization": "Bearer ${EXPENSES_API_TOKEN}"
+      }
+    }
+  }
+}

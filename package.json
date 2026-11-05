@@ -10,7 +10,8 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node dist/db/migrate.js",
-    "openapi": "tsx scripts/generate-openapi.ts"
+    "openapi": "node --import tsx scripts/generate-openapi.ts",
+    "demo": "npm run build && node scripts/demo-local.mjs"
   },
   "author": "",
   "license": "UNLICENSED",
@@ -19,7 +20,8 @@
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.12.8",
     "pg": "^8.23.1",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
@@ -28,8 +30,7 @@
     "embedded-postgres": "^16.15.0-beta.19",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "vitest": "^5.1.0",
-    "zod-to-json-schema": "^3.25.2"
+    "vitest": "^5.1.0"
   },
   "private": true,
   "type": "module",

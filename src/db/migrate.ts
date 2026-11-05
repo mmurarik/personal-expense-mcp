@@ -26,10 +26,8 @@ async function main(): Promise<void> {
 
 // Run only when executed directly, not when tests import runMigrations.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main().catch((err: unknown) => {
-    // Drizzle wraps database errors; the underlying cause (e.g. connection refused) is the useful part.
-    const cause = err instanceof Error && err.cause instanceof Error ? ` (${err.cause.message})` : "";
-    console.error("Migration failed:", err instanceof Error ? err.message + cause : err);
+  main().catch(() => {
+    console.error("Migration failed. Check database settings, connectivity, and migration privileges.");
     process.exitCode = 1;
   });
 }

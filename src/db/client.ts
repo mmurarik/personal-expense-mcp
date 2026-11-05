@@ -25,8 +25,8 @@ export function createPool(config: DbConfig): pg.Pool {
   });
   // An idle connection can drop, for example while the database restarts.
   // Log it instead of letting the unhandled error crash the process.
-  pool.on("error", (err) => {
-    console.error(JSON.stringify({ level: "error", msg: "idle database connection error", error: err.message }));
+  pool.on("error", () => {
+    console.error(JSON.stringify({ level: "error", msg: "idle database connection error" }));
   });
   return pool;
 }
