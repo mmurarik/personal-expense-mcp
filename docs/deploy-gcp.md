@@ -45,7 +45,7 @@ gcloud projects add-iam-policy-binding "$EXPENSES_PROJECT" \
   --member="serviceAccount:$EXPENSES_SA" --role=roles/cloudsql.client
 ```
 
-The SQL instance has a public IP for the managed connector. Leave **Authorized networks** empty. The provisioner needs rights to enable APIs, create infrastructure and grant IAM. Separately, the release deployer needs Cloud Build submission and Cloud Run deployment permissions (including the invoker IAM setting), plus `roles/iam.serviceAccountUser` scoped to `expenses-runtime`. Use `gcloud builds get-default-service-account --region="$EXPENSES_REGION"` to identify the build service account. Give that identity Artifact Registry Writer on the `expenses` repository and grant access to read the staged source and write build logs in the regional buckets. Keep those grants off the runtime account. [Cloud Build service accounts](https://docs.cloud.google.com/build/docs/cloud-build-service-account) · [Cloud SQL instance creation](https://docs.cloud.google.com/sql/docs/postgres/create-instance)
+The SQL instance has a public IP for the managed connector. Leave **Authorized networks** empty. The provisioner needs rights to enable APIs, create infrastructure and grant IAM. Separately, the release deployer needs Cloud Build submission and Cloud Run deployment permissions (including the invoker IAM setting), plus `roles/iam.serviceAccountUser` scoped to `expenses-runtime`. Use `gcloud builds get-default-service-account --region="$EXPENSES_REGION"` to identify the build service account. Give that identity Artifact Registry Writer on the `expenses` repository, read access to the regional source bucket, and Logs Writer on the project for Cloud Logging build output. Keep those grants off the runtime account. [Cloud Build service accounts](https://docs.cloud.google.com/build/docs/cloud-build-service-account) · [Cloud SQL instance creation](https://docs.cloud.google.com/sql/docs/postgres/create-instance)
 
 ## 2. Set up the database login and secrets
 
@@ -93,11 +93,34 @@ Give the owner read access to the API token secret for client setup. The app rea
 
 ## 3. Build and run the migration job
 
+Prepare the build identity and regional source bucket before the first build. These permissions belong to the build account, not `expenses-runtime`. Keep the existing bucket when resuming; run the bucket creation command only if it does not exist. Build logs use Cloud Logging, so the build account does not need Storage Admin or a separate logs bucket.
+
+```bash
+export EXPENSES_BUILD_SA="$(gcloud builds get-default-service-account --project="$EXPENSES_PROJECT" --region="$EXPENSES_REGION")"
+export EXPENSES_BUILD_SOURCE_BUCKET="${EXPENSES_PROJECT}_${EXPENSES_REGION}_cloudbuild"
+
+# First-time only; describe the bucket instead when resuming.
+gcloud storage buckets create "gs://$EXPENSES_BUILD_SOURCE_BUCKET" \
+  --project="$EXPENSES_PROJECT" --location="$EXPENSES_REGION" \
+  --uniform-bucket-level-access --public-access-prevention
+
+gcloud storage buckets add-iam-policy-binding "gs://$EXPENSES_BUILD_SOURCE_BUCKET" \
+  --member="serviceAccount:$EXPENSES_BUILD_SA" --role=roles/storage.objectViewer --condition=None
+gcloud projects add-iam-policy-binding "$EXPENSES_PROJECT" \
+  --member="serviceAccount:$EXPENSES_BUILD_SA" --role=roles/logging.logWriter --condition=None
+gcloud artifacts repositories add-iam-policy-binding expenses \
+  --project="$EXPENSES_PROJECT" --location="$EXPENSES_REGION" \
+  --member="serviceAccount:$EXPENSES_BUILD_SA" --role=roles/artifactregistry.writer --condition=None
+```
+
+The build account can read source archives, write build logs to Cloud Logging, and push images to this repository. The provisioner creates the source bucket. The committed `cloudbuild.json` selects `CLOUD_LOGGING_ONLY`, keeping bucket administration off the build account. [Build log storage](https://docs.cloud.google.com/build/docs/securing-builds/store-manage-build-logs) · [Cloud Storage roles](https://docs.cloud.google.com/storage/docs/access-control/iam-roles)
+
 Cloud Build uploads the paths allowed by `.gcloudignore`. The image contains both executables and the committed migrations. Stop before deploying the web service if either job execution fails. The second execution verifies a clean rerun.
 
 ```bash
-gcloud builds submit --region="$EXPENSES_REGION" \
-  --default-buckets-behavior=regional-user-owned-bucket --tag "$EXPENSES_IMAGE" .
+gcloud builds submit --project="$EXPENSES_PROJECT" --region="$EXPENSES_REGION" \
+  --config=cloudbuild.json --substitutions="_EXPENSES_IMAGE=$EXPENSES_IMAGE" \
+  --gcs-source-staging-dir="gs://$EXPENSES_BUILD_SOURCE_BUCKET/source" .
 
 gcloud run jobs deploy expenses-migrate \
   --image="$EXPENSES_IMAGE" --region="$EXPENSES_REGION" \
@@ -134,6 +157,8 @@ Cloud Run accepts internet traffic. Fastify enforces bearer authentication on al
 
 ## 5. Verify before connecting Claude
 
+Use `/health` for public liveness. Cloud Run [reserves some URL paths ending in `z`](https://docs.cloud.google.com/run/docs/known-issues#reserved-url-paths), so the liveness route avoids that suffix. Database readiness remains authenticated at `/readyz`.
+
 Load the pinned token into the current shell without printing it. Run this synthetic REST check. Repeat it with a fresh tag after each release.
 
 ```bash
@@ -154,7 +179,7 @@ async function check(path, status, options = {}) {
   await res.text();
 }
 const path = '/v1/expenses';
-await check('/healthz', 200);
+await check('/health', 200);
 await check('/readyz', 401);
 await check('/readyz', 200, { headers: auth });
 await check(path, 401);

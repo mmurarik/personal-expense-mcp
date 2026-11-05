@@ -19,7 +19,9 @@ afterAll(() => app.close());
 
 describe("REST API", () => {
   it("serves public liveness and protects readiness and all five expense operations", async () => {
-    expect((await app.inject("/healthz")).json()).toEqual({ status: "ok" });
+    const health = await app.inject("/health");
+    expect(health.statusCode).toBe(200);
+    expect(health.json()).toEqual({ status: "ok" });
     expect((await send({ url: "/readyz" })).json()).toEqual({ status: "ok" });
     const item = `${base}/${randomUUID()}`;
     const operations = [

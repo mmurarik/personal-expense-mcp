@@ -238,7 +238,7 @@ Return a consistent error object:
 
 Use 401 for missing or invalid authentication; 404 for an absent expense; 409 for idempotency or version conflicts; 422 for invalid input; and 503 for an unavailable database. Do not expose SQL, credentials, or stack traces.
 
-GET /healthz is public, lightweight, and returns only service status. GET /readyz is authenticated and runs a small database check. Protect or disable interactive API docs in the deployed service; generate openapi.json as a repository artifact.
+GET /health is public, lightweight, and returns only service status. GET /readyz is authenticated and runs a small database check. Protect or disable interactive API docs in the deployed service; generate openapi.json as a repository artifact.
 
 # MCP tool contract
 
@@ -463,7 +463,7 @@ V0 is done only when all of these pass against the deployed service:
 
 - A new database can be initialized from migrations; rerunning them is safe.
 
-- /healthz returns 200; an authenticated /readyz confirms database access.
+- /health returns 200; an authenticated /readyz confirms database access.
 
 - Missing and incorrect tokens fail on every expense route and on MCP initialization/tool calls.
 

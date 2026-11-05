@@ -470,7 +470,7 @@
     }
   },
   "paths": {
-    "/healthz": {
+    "/health": {
       "get": {
         "summary": "Check service liveness",
         "operationId": "health",

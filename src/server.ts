@@ -63,7 +63,7 @@ export function createServer(config: AppConfig = loadAppConfig(), logStream?: No
   });
 
   // Liveness does not access the database.
-  server.get("/healthz", async () => ({ status: "ok" }));
+  server.get("/health", async () => ({ status: "ok" }));
   server.get("/readyz", { onRequest: authenticate }, async (request) => {
     try {
       await service.ready();

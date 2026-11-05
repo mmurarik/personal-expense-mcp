@@ -162,7 +162,7 @@ describe("MCP over real Streamable HTTP", () => {
 
   it("reports PostgreSQL unavailability in readiness, REST reads/writes, and MCP writes", async () => {
     await start(await freePort());
-    expect((await app.inject("/healthz")).statusCode).toBe(200);
+    expect((await app.inject("/health")).statusCode).toBe(200);
     const routes = [
       { url: "/readyz" },
       { url: "/v1/expenses" },
