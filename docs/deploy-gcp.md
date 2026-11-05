@@ -25,7 +25,21 @@ gcloud sql instances create expenses-db \
   --database-version=POSTGRES_16 --edition=enterprise --tier=db-f1-micro \
   --region="$EXPENSES_REGION" --availability-type=zonal --assign-ip \
   --storage-size=10 --backup-start-time=09:00 --deletion-protection
+```
 
+If you are resuming a deployment, check the existing instance before running the creation command again. The same read-only check also verifies a new instance.
+
+```bash
+gcloud sql instances describe expenses-db \
+  --project="$EXPENSES_PROJECT" \
+  --format='yaml(name,state,region,databaseVersion,settings.edition,settings.tier,settings.availabilityType,settings.dataDiskSizeGb,settings.ipConfiguration,settings.backupConfiguration.enabled,settings.backupConfiguration.startTime,settings.deletionProtectionEnabled)'
+```
+
+Confirm `state: RUNNABLE`, PostgreSQL 16, Enterprise edition, `db-f1-micro`, zonal availability, and 10 GB of storage for a new instance. Verify that IPv4 is enabled, the authorized networks list is empty or absent, backups are enabled with a 09:00 UTC start time, and deletion protection is enabled.
+
+Create the identity that the expense service will use at runtime, then grant it permission to connect through the Cloud SQL connector. The PostgreSQL login is set up separately in the next section.
+
+```bash
 gcloud iam service-accounts create expenses-runtime
 gcloud projects add-iam-policy-binding "$EXPENSES_PROJECT" \
   --member="serviceAccount:$EXPENSES_SA" --role=roles/cloudsql.client
