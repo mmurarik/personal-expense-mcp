@@ -2,7 +2,7 @@
 
 A single-owner USD expense service. An MCP client calls one of five tools over HTTP. Each tool calls the REST API on the same service. The API validates the input and uses PostgreSQL to store or retrieve the record.
 
-**Deployed URL** · Pending Cloud Run deployment. After deployment, record the HTTPS service origin here. The remote connector URL is `BASE_URL/mcp`. The owner obtains the pinned API token from Secret Manager's `expenses-api-token` secret.
+**Deployed URL** · https://expenses-7r5nbenrda-uc.a.run.app. Public liveness is `BASE_URL/health`; database readiness is authenticated at `BASE_URL/readyz`. The remote connector URL is `BASE_URL/mcp`. The owner obtains the pinned API token from Secret Manager's `expenses-api-token` secret.
 
 ## Run the five-minute local demo
 
@@ -28,7 +28,7 @@ npm run db:generate
 The tests use disposable PostgreSQL, Fastify's in-process HTTP test interface for REST, and the official MCP client over a real HTTP listener. `db:generate` should report no changes for the current schema. OpenAPI is generated at [openapi.json](openapi.json).
 
 
-Local verification passed on Node 22 and PostgreSQL 16, including all 31 integration tests, the full SDK-client demo, and Claude Code's connection check against the compiled server. The Docker image built successfully in Google Cloud Shell. Live Cloud Run and a Claude conversation using the deployed connector are pending.
+The health-route repair passed type checking, compilation, and all 31 integration tests using the available local Node 24 runtime and disposable PostgreSQL 16. Cloud Build compiled the production image with the Dockerfile's pinned Node 22 runtime. Cloud Run revision `expenses-00002-g6p` passed deployed public health, authentication rejection, authenticated database readiness, and synthetic REST CRUD smoke checks, including creation retry, stale-version conflict, and repeated deletion. A real Claude conversation using the deployed connector and the remaining deployed acceptance checks are still pending.
 
 For an interactive run, create a local PostgreSQL database named `expenses` owned by your `expenses_app` login. Copy `.env.example` to `.env`, fill in your local database password, and set `API_BEARER_TOKEN` to a value generated with `openssl rand -hex 32`. Then run these from the repository root.
 

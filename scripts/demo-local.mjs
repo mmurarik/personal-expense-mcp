@@ -50,7 +50,7 @@ try {
   }
 
   await connect();
-  assert.equal((await fetch(`${base}/healthz`)).status, 200);
+  assert.equal((await fetch(`${base}/health`)).status, 200);
   assert.equal((await fetch(`${base}/readyz`, { headers })).status, 200);
   const { tools } = await client.listTools();
   assert.equal(tools.length, 5);

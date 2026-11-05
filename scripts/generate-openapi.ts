@@ -39,7 +39,7 @@ const document = {
   security: [{ bearerAuth: [] }],
   components: { schemas, securitySchemes: { bearerAuth: { type: "http", scheme: "bearer" } } },
   paths: {
-    "/healthz": {
+    "/health": {
       get: { summary: "Check service liveness", operationId: "health", security: [], responses: { 200: response("Service is running.", "Status") } },
     },
     "/readyz": {
