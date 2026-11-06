@@ -10,9 +10,10 @@ A single-owner USD expense service. An MCP client calls one of five tools over H
 - **Deployed service:** Cloud Run revision `expenses-00002-g6p` passed public health, authentication rejection, authenticated readiness, and synthetic REST CRUD smoke checks.
 - **Claude demo (passed):** A real Claude conversation connected through the deployed connector and discovered exactly five tools. It created the synthetic $12.50 Corner Cafe expense, found it by ID and in a filtered list, read it from a separate conversation and after a fresh instance, recategorized it, and deleted it, with repeated deletion succeeding. A record with no optional details read back with null fields.
 - **Deployed acceptance (passed):** A separate, disposable Cloud Run service and database, running the same image digest, passed checks for authentication and input validation, concurrent retries and conflicts, filters and pagination, and database outage and recovery.
-- **Logging review (passed at project level):** Application and PostgreSQL logs record only routes, tool names, statuses, and durations, and the tool schemas contain no credentials or expense contents. Platform request logs for both services are excluded from the `_Default` sink.
+- **Logging review (passed):** Application and PostgreSQL logs record only routes, tool names, statuses, and durations, and the tool schemas contain no credentials or expense contents. Platform request logs for both services are excluded from the project's `_Default` sink. The project sits directly under the organization, with no folders in between. The organization has only its built-in `_Required` and `_Default` sinks, and neither includes child projects, so no sink above the project receives its logs.
 - **Changed-proposal confirmation (passed on retest):** During the demo, Claude once saved a create when "confirm" arrived together with a change to the notes. In a fresh Claude conversation, the same kind of reply produced a revised preview and a new request for confirmation. Service logs show that no create call was made.
-- **Still open:** confirmation of logging sinks inherited from the Google Cloud organization. V0 is not complete until that check passes.
+
+All V0 acceptance criteria in the specification have passed against the deployed service.
 
 ## Run the five-minute local demo
 
