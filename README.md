@@ -4,6 +4,16 @@ A single-owner USD expense service. An MCP client calls one of five tools over H
 
 **Deployed URL** · https://expenses-7r5nbenrda-uc.a.run.app. Public liveness is `BASE_URL/health`; database readiness is authenticated at `BASE_URL/readyz`. The remote connector URL is `BASE_URL/mcp`. The owner obtains the pinned API token from Secret Manager's `expenses-api-token` secret.
 
+## Verification status
+
+- **Local:** type checking, compilation, and all 31 integration tests pass on Node 22 with disposable PostgreSQL 16. The committed OpenAPI file and migrations match the code.
+- **Deployed service:** Cloud Run revision `expenses-00002-g6p` passed public health, authentication rejection, authenticated readiness, and synthetic REST CRUD smoke checks.
+- **Claude demo (passed):** A real Claude conversation connected through the deployed connector and discovered exactly five tools. It created the synthetic $12.50 Corner Cafe expense, found it by ID and in a filtered list, read it from a separate conversation and after a fresh instance, recategorized it, and deleted it, with repeated deletion succeeding. A record with no optional details read back with null fields.
+- **Deployed acceptance (passed):** A separate, disposable Cloud Run service and database, running the same image digest, passed checks for authentication and input validation, concurrent retries and conflicts, filters and pagination, and database outage and recovery.
+- **Logging review (passed at project level):** Application and PostgreSQL logs record only routes, tool names, statuses, and durations, and the tool schemas contain no credentials or expense contents. Platform request logs for both services are excluded from the `_Default` sink.
+- **Changed-proposal confirmation (passed on retest):** During the demo, Claude once saved a create when "confirm" arrived together with a change to the notes. In a fresh Claude conversation, the same kind of reply produced a revised preview and a new request for confirmation. Service logs show that no create call was made.
+- **Still open:** confirmation of logging sinks inherited from the Google Cloud organization. V0 is not complete until that check passes.
+
 ## Run the five-minute local demo
 
 Use Node.js 22 and npm. If you already use nvm, run `nvm use` first. From the repository root, run the following as a regular user. The embedded PostgreSQL package starts a real PostgreSQL 16 server on a temporary loopback port.
@@ -26,9 +36,6 @@ npm run db:generate
 ```
 
 The tests use disposable PostgreSQL, Fastify's in-process HTTP test interface for REST, and the official MCP client over a real HTTP listener. `db:generate` should report no changes for the current schema. OpenAPI is generated at [openapi.json](openapi.json).
-
-
-The health-route repair passed type checking, compilation, and all 31 integration tests using the available local Node 24 runtime and disposable PostgreSQL 16. Cloud Build compiled the production image with the Dockerfile's pinned Node 22 runtime. Cloud Run revision `expenses-00002-g6p` passed deployed public health, authentication rejection, authenticated database readiness, and synthetic REST CRUD smoke checks, including creation retry, stale-version conflict, and repeated deletion. A real Claude conversation using the deployed connector and the remaining deployed acceptance checks are still pending.
 
 For an interactive run, create a local PostgreSQL database named `expenses` owned by your `expenses_app` login. Copy `.env.example` to `.env`, fill in your local database password, and set `API_BEARER_TOKEN` to a value generated with `openssl rand -hex 32`. Then run these from the repository root.
 
